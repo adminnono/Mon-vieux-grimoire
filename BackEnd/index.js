@@ -19,14 +19,52 @@ app.listen(PORT, function () {
   console.log("server is running on: ${PORT}");
 });
 
+const users = [];
+
 function signUp(req, res) {
-  console.log("req:", req);
   const body = req.body;
-  res.send("sign up");
+  const email = req.body.email;
+  const password = req.body.password;
+
+  (user) => {
+    console.log("hi");
+  };
+
+  const userInDb = users.find((user) => user.email === email);
+  if (userInDb != null) {
+    res.status(400).send("Email already exists");
+    return;
+  }
+  const user = {
+    email: email,
+    password: password,
+  };
+  users.push(user);
+  res.send("Sign up");
 }
+
+const admin = {
+  email: "arnaud.dujardin76@gmail.com",
+  password: "123456",
+};
 
 function login(req, res) {
   const body = req.body;
-  console.log("body:", body);
-  req.send("Login");
+
+  const userInDb = users.find((user) => user.email === body.email);
+  if (userInDb == null) {
+    res.status(401).send("Wrong email");
+    return;
+  }
+
+  const passwordInDb = userInDb.password;
+  if (passwordInDb != body.password) {
+    res.status(401).send("Wrong password");
+    return;
+  }
+
+  res.send({
+    userId: "123",
+    token: "token",
+  });
 }
