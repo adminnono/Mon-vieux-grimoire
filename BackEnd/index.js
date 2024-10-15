@@ -1,6 +1,6 @@
 const express = require("express");
 const app = express();
-require("./db/mongo");
+const { User } = require("./db/mongo");
 const cors = require("cors");
 
 const PORT = 4000;
@@ -20,9 +20,7 @@ app.listen(PORT, function () {
   console.log("server is running on: ${PORT}");
 });
 
-const users = [];
-
-function signUp(req, res) {
+async function signUp(req, res) {
   const body = req.body;
   const email = req.body.email;
   const password = req.body.password;
@@ -31,7 +29,9 @@ function signUp(req, res) {
     console.log("hi");
   };
 
-  const userInDb = users.find((user) => user.email === email);
+  const userInDb = await User.findOne({
+    email: email,
+  });
   if (userInDb != null) {
     res.status(400).send("Email already exists");
     return;
@@ -40,7 +40,14 @@ function signUp(req, res) {
     email: email,
     password: password,
   };
-  users.push(user);
+  try {
+    await User.create(user);
+    throw new Error("db unreachable");
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("something went wrong");
+    return;
+  }
   res.send("Sign up");
 }
 
@@ -49,10 +56,12 @@ const admin = {
   password: "123456",
 };
 
-function login(req, res) {
+async function login(req, res) {
   const body = req.body;
 
-  const userInDb = users.find((user) => user.email === body.email);
+  const userInDb = await User.findOne({
+    email: body.email,
+  });
   if (userInDb == null) {
     res.status(401).send("Wrong email");
     return;
@@ -65,7 +74,7 @@ function login(req, res) {
   }
 
   res.send({
-    userId: "123",
+    userId: userInDb._id,
     token: "token",
   });
 }
