@@ -17,8 +17,10 @@ app.get("/", sayHi);
 app.post("/api/auth/signup", signUp);
 app.post("/api/auth/login", login);
 
+console.log("password in .env", process.env);
+
 app.listen(PORT, function () {
-  console.log("server is running on: ${PORT}");
+  console.log(`server is running on: ${PORT}`);
 });
 
 async function signUp(req, res) {
