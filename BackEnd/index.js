@@ -3,6 +3,23 @@ const app = express();
 const { User } = require("./db/mongo");
 const cors = require("cors");
 const bcrypt = require("bcrypt");
+const { books } = require("./db/books");
+const multer = require("multer");
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "public/images");
+  },
+  filename: function (req, file, cb) {
+    const fileName =
+      file.originalname.toLocaleLowerCase() + Date.now() + ".jpg";
+    cb(null, Date.now() + "_" + fileName);
+  },
+});
+
+const upload = multer({
+  storage: storage,
+});
 
 const PORT = 4000;
 
@@ -16,8 +33,20 @@ function sayHi(req, res) {
 app.get("/", sayHi);
 app.post("/api/auth/signup", signUp);
 app.post("/api/auth/login", login);
+app.get("/api/books", getBooks);
+app.post("/api/books", upload.single("image"), postBook);
 
-console.log("password in .env", process.env);
+function postBook(req, res) {
+  const book = req.body;
+  console.log("book:", book);
+  res.send("Book received");
+}
+
+function getBooks(req, res) {
+  res.send(books);
+}
+
+console.log("password in .env", process.env.PASSWORD);
 
 app.listen(PORT, function () {
   console.log(`server is running on: ${PORT}`);
@@ -25,61 +54,55 @@ app.listen(PORT, function () {
 
 async function signUp(req, res) {
   const body = req.body;
-  const email = req.body.email;
-  const password = req.body.password;
+  const email = body.email;
+  const password = body.password;
 
-  (user) => {
-    console.log("hi");
-  };
-
-  const userInDb = await User.findOne({
-    email: email,
-  });
-  if (userInDb != null) {
-    res.status(400).send("Email already exists");
-    return;
-  }
-  const user = {
-    email: email,
-    password: hashPassword(password),
-  };
   try {
+    const userInDb = await User.findOne({ email: email });
+    if (userInDb) {
+      res.status(400).send("Email already exists");
+      return;
+    }
+
+    const user = {
+      email: email,
+      password: hashPassword(password),
+    };
+
     await User.create(user);
-    throw new Error("db unreachable");
+    res.send("Sign up successful");
   } catch (e) {
     console.error(e);
-    res.status(500).send("something went wrong");
-    return;
+    res.status(500).send("Something went wrong");
   }
-  res.send("Sign up");
 }
-
-const admin = {
-  email: "arnaud.dujardin76@gmail.com",
-  password: "123456",
-};
 
 async function login(req, res) {
   const body = req.body;
+  const email = body.email;
+  const password = body.password;
 
-  const userInDb = await User.findOne({
-    email: body.email,
-  });
-  if (userInDb == null) {
-    res.status(401).send("Wrong email");
-    return;
+  try {
+    const userInDb = await User.findOne({ email: email });
+    if (!userInDb) {
+      res.status(401).send("Wrong email");
+      return;
+    }
+
+    const passwordInDb = userInDb.password;
+    if (!isPasswordCorrect(password, passwordInDb)) {
+      res.status(401).send("Wrong password");
+      return;
+    }
+
+    res.send({
+      userId: userInDb._id,
+      token: "token",
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Something went wrong");
   }
-
-  const passwordInDb = userInDb.password;
-  if (!isPasswordCorrect(req.body.password, passwordInDb)) {
-    res.status(401).send("Wrong password");
-    return;
-  }
-
-  res.send({
-    userId: userInDb._id,
-    token: "token",
-  });
 }
 
 function hashPassword(password) {
