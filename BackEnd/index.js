@@ -1,6 +1,6 @@
 const express = require("express");
 const app = express();
-const { User } = require("./db/mongo");
+const { User, Book } = require("./db/mongo");
 const cors = require("cors");
 const bcrypt = require("bcrypt");
 const { books } = require("./db/books");
@@ -25,6 +25,7 @@ const PORT = 4000;
 
 app.use(cors());
 app.use(express.json());
+app.use("/images", express.static("uploads"));
 
 function sayHi(req, res) {
   res.send("Hello World");
@@ -36,10 +37,18 @@ app.post("/api/auth/login", login);
 app.get("/api/books", getBooks);
 app.post("/api/books", upload.single("image"), postBook);
 
-function postBook(req, res) {
-  const book = req.body;
-  console.log("book:", book);
-  res.send("Book received");
+async function postBook(req, res) {
+  const file = req.file;
+  const stringifiedBook = req.body.book;
+  const book = JSON.parse(stringifiedBook);
+  book.imageUrl = file.path;
+  try {
+    const result = await Book.create(book);
+    res.send({ message: "Book posted", book: result });
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Something went wrong" + e.message);
+  }
 }
 
 function getBooks(req, res) {
