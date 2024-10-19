@@ -16,36 +16,4 @@ async function connect() {
 }
 connect();
 
-const UserSchema = new mongoose.Schema({
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-  },
-  password: {
-    type: String,
-    required: true,
-  },
-});
-
-const User = mongoose.model("User", UserSchema);
-
-const BookSchema = new mongoose.Schema({
-  userId: String,
-  title: String,
-  author: String,
-  year: Number,
-  genre: String,
-  imageUrl: String,
-  ratings: [
-    {
-      userId: String,
-      grade: Number,
-    },
-  ],
-  averageRating: Number,
-});
-
-const Book = mongoose.model("Book", BookSchema);
-
-module.exports = { User, Book };
+module.exports = { mongoose };
