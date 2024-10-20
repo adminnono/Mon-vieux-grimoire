@@ -1,3 +1,8 @@
+const { books } = require("../db/books");
+const { Book } = require("../models/Book");
+const { upload } = require("../middlewares/multer"); // Ajoutez cette ligne pour importer 'upload'
+const express = require("express");
+
 async function postBook(req, res) {
   const file = req.file;
   const stringifiedBook = req.body.book;
@@ -16,4 +21,8 @@ function getBooks(req, res) {
   res.send(books);
 }
 
-module.exports = { getBooks, postBook };
+const booksRouter = express.Router();
+booksRouter.get("/", getBooks);
+booksRouter.post("/", upload.single("image"), postBook);
+
+module.exports = { booksRouter };

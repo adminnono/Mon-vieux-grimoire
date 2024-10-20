@@ -1,15 +1,15 @@
-const body = req.body;
-const bcrypt = require("bcrypt");
 const { User } = require("../models/User");
+const bcrypt = require("bcrypt");
+const express = require("express");
+
 async function signUp(req, res) {
-  const email = body.email;
-  const password = body.password;
+  const email = req.body.email;
+  const password = req.body.password;
 
   try {
     const userInDb = await User.findOne({ email: email });
     if (userInDb) {
-      res.status(400).send("Email already exists");
-      return;
+      return res.status(400).json({ message: "Email already exists" });
     }
 
     const user = {
@@ -18,10 +18,10 @@ async function signUp(req, res) {
     };
 
     await User.create(user);
-    res.send("Sign up successful");
+    res.status(201).json({ message: "Sign up successful" });
   } catch (e) {
     console.error(e);
-    res.status(500).send("Something went wrong");
+    res.status(500).json({ message: "Something went wrong" });
   }
 }
 
@@ -33,23 +33,21 @@ async function login(req, res) {
   try {
     const userInDb = await User.findOne({ email: email });
     if (!userInDb) {
-      res.status(401).send("Wrong email");
-      return;
+      return res.status(401).json({ message: "Wrong email" });
     }
 
     const passwordInDb = userInDb.password;
     if (!isPasswordCorrect(password, passwordInDb)) {
-      res.status(401).send("Wrong password");
-      return;
+      return res.status(401).json({ message: "Wrong password" });
     }
 
-    res.send({
+    res.json({
       userId: userInDb._id,
       token: "token",
     });
   } catch (e) {
     console.error(e);
-    res.status(500).send("Something went wrong");
+    res.status(500).json({ message: "Something went wrong" });
   }
 }
 
@@ -63,4 +61,9 @@ function isPasswordCorrect(password, hash) {
   return bcrypt.compareSync(password, hash);
 }
 
-module.exports = { signUp, login };
+const usersRouter = express.Router();
+
+usersRouter.post("/signup", signUp);
+usersRouter.post("/login", login);
+
+module.exports = { usersRouter };
