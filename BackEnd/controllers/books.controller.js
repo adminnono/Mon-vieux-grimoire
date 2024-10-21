@@ -1,4 +1,3 @@
-const { books } = require("../db/books");
 const { Book } = require("../models/Book");
 const { upload } = require("../middlewares/multer"); // Ajoutez cette ligne pour importer 'upload'
 const express = require("express");
@@ -17,7 +16,8 @@ async function postBook(req, res) {
   }
 }
 
-function getBooks(req, res) {
+async function getBooks(req, res) {
+  const books = await Book.find();
   res.send(books);
 }
 
