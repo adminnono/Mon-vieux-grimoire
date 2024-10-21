@@ -1,9 +1,30 @@
 const { Book } = require("../models/Book");
-const { upload } = require("../middlewares/multer"); // Ajoutez cette ligne pour importer 'upload'
+const { upload } = require("../middlewares/multer");
 const express = require("express");
 
+const booksRouter = express.Router();
+booksRouter.get("/:id", getBookById);
+booksRouter.get("/", getBooks);
+booksRouter.post("/", upload.single("image"), postBook);
+
+async function getBookById(req, res) {
+  const id = req.params.id;
+  try {
+    const book = await Book.findById(id);
+
+    if (book == null) {
+      res.status(404).send("Book not found");
+      return;
+    }
+    book.imageUrl = getAbsoluteImagePath(book.imageUrl);
+    res.send(book);
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Something went wrong" + e.message);
+  }
+}
+
 async function postBook(req, res) {
-  const file = req.file;
   const stringifiedBook = req.body.book;
   const book = JSON.parse(stringifiedBook);
   const filename = req.file.filename;
@@ -34,9 +55,5 @@ function getAbsoluteImagePath(fileName) {
     fileName
   );
 }
-
-const booksRouter = express.Router();
-booksRouter.get("/", getBooks);
-booksRouter.post("/", upload.single("image"), postBook);
 
 module.exports = { booksRouter };
