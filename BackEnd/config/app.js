@@ -5,6 +5,6 @@ require("./../db/mongo.js");
 
 app.use(cors());
 app.use(express.json());
-app.use("/images", express.static("uploads"));
+app.use("/" + process.env.IMAGES_FOLDER_PATH, express.static("uploads"));
 
 module.exports = { app };
