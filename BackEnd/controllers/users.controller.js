@@ -1,6 +1,7 @@
 const { User } = require("../models/User");
 const bcrypt = require("bcrypt");
 const express = require("express");
+const jwt = require("jsonwebtoken");
 
 async function signUp(req, res) {
   const email = req.body.email;
@@ -43,8 +44,18 @@ async function login(req, res) {
 
     res.json({
       userId: userInDb._id,
-      token: "token",
+      token: generateToken(userInDb._id),
     });
+
+    function generateToken(idInDb) {
+      const payload = {
+        userId: idInDb,
+      };
+      const token = jwt.sign(payload, "PELICAN", {
+        expiresIn: "1d",
+      });
+      return token;
+    }
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: "Something went wrong" });
