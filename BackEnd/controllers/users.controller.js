@@ -51,7 +51,8 @@ async function login(req, res) {
       const payload = {
         userId: idInDb,
       };
-      const token = jwt.sign(payload, "PELICAN", {
+      const jwtSecret = String(process.env.JWT_SECRET);
+      const token = jwt.sign(payload, jwtSecret, {
         expiresIn: "1d",
       });
       return token;
