@@ -7,6 +7,29 @@ const booksRouter = express.Router();
 booksRouter.get("/:id", getBookById);
 booksRouter.get("/", getBooks);
 booksRouter.post("/", checkToken, upload.single("image"), postBook);
+booksRouter.delete("/:id", checkToken, deleteBook);
+
+async function deleteBook(req, res) {
+  const id = req.params.id;
+  try {
+    const bookInDb = await Book.findById(id);
+    if (bookInDb == null) {
+      res.status(404).send("Book not found");
+      return;
+    }
+    const userIdInDb = bookInDb.userId;
+    const userIdInToken = req.tokenPayload.userId;
+    if (userIdInDb != userIdInToken) {
+      res.status(403).send("You cannot delete other people's books");
+      return;
+    }
+    await Book.findByIdAndDelete(id);
+    res.send("Book deleted");
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Something went wrong" + e.message);
+  }
+}
 
 function checkToken(req, res, next) {
   const headers = req.headers;
@@ -19,6 +42,11 @@ function checkToken(req, res, next) {
   try {
     const jwtSecret = String(process.env.JWT_SECRET);
     const tokenPayload = jwt.verify(token, jwtSecret);
+    if (tokenPayload == null) {
+      res.status(401).send("Unauthorized");
+      return;
+    }
+    req.tokenPayload = tokenPayload;
     next();
   } catch (e) {
     console.error(e);
